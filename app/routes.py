@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, render_template
 from flask_caching import Cache
 from supabase import create_client
 from groq import Groq
-from app.utils.embeddings import get_embedding
+from app.utils.db import get_embedding
 from app.utils.faq_data import get_faq_context
 import os
 import datetime

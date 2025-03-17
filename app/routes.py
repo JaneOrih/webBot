@@ -3,7 +3,7 @@ from flask_caching import Cache
 from supabase import create_client
 from groq import Groq
 from app.utils.embeddings import get_embedding
-from app.utils.faq_processor import get_faq_context
+from app.utils.faq_data import get_faq_context
 import os
 import datetime
 import numpy as np

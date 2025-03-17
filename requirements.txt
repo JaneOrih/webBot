@@ -1,0 +1,10 @@
+flask
+supabase
+groq
+sentence-transformers
+pandas
+numpy
+python-dotenv
+requests
+bs4
+flask_caching

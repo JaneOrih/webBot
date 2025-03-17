@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontlett AI Assistant</title>
+    <link rel="icon" href="{{ url_for('static', filename='static/logo_frontlett.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header class="brand-header">
+        <img src="{{ url_for('static', filename='images/frontlett-logo.png') }}" alt="Frontlett Logo" class="logo">
+        <h1>Frontlett Customer Support</h1>
+    </header>
+
+    <main class="chat-container">
+        <div class="chat-history" id="chatHistory">
+            <!-- Initial bot message -->
+            <div class="message bot-message">
+                <div class="avatar">🤖</div>
+                <div class="content">
+                    <p>Hello! I'm Frontlett's AI assistant. How can I help you today?</p>
+                    <p>You can ask about:</p>
+                    <ul>
+                        <li>Web development services</li>
+                        <li>Project timelines</li>
+                        <li>Technical support</li>
+                        <li>Our service portfolio</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type your message here..."

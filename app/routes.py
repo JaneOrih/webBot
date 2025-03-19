@@ -1,10 +1,7 @@
-
-
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from utils.model import chat_model
+from app.utils.model import chat_model
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START, MessagesState

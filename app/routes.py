@@ -8,11 +8,12 @@ from langgraph.graph import StateGraph, START, MessagesState
 from app.utils.db import get_supabase
 import os
 import sys
+from .endpoints import some_endpoint
 
 load_dotenv()
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
+fastapi_app.include_router(chat)
 
 # System prompt used for general queries
 SYSTEM_PROMPT = """You are Frontlett's customer service chatbot.
@@ -21,7 +22,7 @@ If the question is not directly found in the FAQ, provide a summary of Frontlett
 Include a link to the support section if you do not have answers to the question (https://www.frontlett.com/support) if further details are needed."""
 
 # FastAPI app initialization
-app = FastAPI()
+fastapi_app = FastAPI()
 
 # Request model for user input
 class MessageRequest(BaseModel):
@@ -136,5 +137,5 @@ async def chat(request: MessageRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app/routes:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("app/routes:fastapi_app", host="0.0.0.0", port=8080, reload=True)
 

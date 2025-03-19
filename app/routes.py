@@ -8,12 +8,13 @@ from langgraph.graph import StateGraph, START, MessagesState
 from app.utils.db import get_supabase
 import os
 import sys
-from .endpoints import some_endpoint
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from starlette.requests import Request
 
 load_dotenv()
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-fastapi_app.include_router(chat)
 
 # System prompt used for general queries
 SYSTEM_PROMPT = """You are Frontlett's customer service chatbot.
@@ -24,15 +25,25 @@ Include a link to the support section if you do not have answers to the question
 # FastAPI app initialization
 fastapi_app = FastAPI()
 
+# Set up Jinja2Templates to look for templates in the "app/templates" directory
+templates = Jinja2Templates(directory="app/templates")
+
+# Mount the static directory to serve static files like images, CSS, etc.
+fastapi_app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Request model for user input
 class MessageRequest(BaseModel):
     message: str
 
-@app.get("/")
+@fastapi_app.get("/", response_class=HTMLResponse)
+async def get_chat(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request})
+
+@fastapi_app.get("/")
 def root():
     return {"message": "Chatbot is working"}
 
-@app.post("/chat")
+@fastapi_app.post("/chat")
 async def chat(request: MessageRequest):
     user_input = request.message.strip().lower()
 
@@ -41,15 +52,10 @@ async def chat(request: MessageRequest):
 
     supabase = get_supabase()
 
-    # Check if the query is a general inquiry about what Frontlett does.
     if "what do you do" in user_input or "what is frontlett" in user_input:
-        # Retrieve all FAQs as context for a business summary
         all_faq_response = supabase.table('faq_knowledge').select('question, answer').execute()
         all_faq_data = all_faq_response.data or []
-        faq_context = "\n".join(
-            [f"Q: {faq['question']}\nA: {faq['answer']}" for faq in all_faq_data]
-        )
-        # Build a system prompt that instructs the model to summarize Frontlett's business model
+        faq_context = "\n".join([f"Q: {faq['question']}\nA: {faq['answer']}" for faq in all_faq_data])
         business_summary_prompt = (
             "Based on the following FAQ information, provide a concise summary of what Frontlett does, "
             "highlighting our collaborative 'Virtualting' work model, key services, and core functionalities. "
@@ -64,7 +70,6 @@ async def chat(request: MessageRequest):
             ]
         )
     else:
-        # For more specific queries, try to retrieve matching FAQs
         response = supabase.table('faq_knowledge') \
                            .select('question, answer') \
                            .ilike('question', f'%{user_input}%') \
@@ -73,9 +78,7 @@ async def chat(request: MessageRequest):
         faq_data = response.data
 
         if faq_data:
-            faq_context = "\n".join(
-                [f"Q: {faq['question']}\nA: {faq['answer']}" for faq in faq_data]
-            )
+            faq_context = "\n".join([f"Q: {faq['question']}\nA: {faq['answer']}" for faq in faq_data])
             prompt_template = ChatPromptTemplate.from_messages(
                 [
                     ("system", SYSTEM_PROMPT),
@@ -84,12 +87,9 @@ async def chat(request: MessageRequest):
                 ]
             )
         else:
-            # If no FAQs match, fall back to including all FAQs as context
             all_faq_response = supabase.table('faq_knowledge').select('question, answer').execute()
             all_faq_data = all_faq_response.data or []
-            faq_context = "\n".join(
-                [f"Q: {faq['question']}\nA: {faq['answer']}" for faq in all_faq_data]
-            )
+            faq_context = "\n".join([f"Q: {faq['question']}\nA: {faq['answer']}" for faq in all_faq_data])
             prompt_template = ChatPromptTemplate.from_messages(
                 [
                     ("system", SYSTEM_PROMPT),
@@ -98,14 +98,11 @@ async def chat(request: MessageRequest):
                 ]
             )
 
-    # Initialize LangChain workflow
     workflow = StateGraph(state_schema=MessagesState)
-    
+
     def call_model(state: MessagesState):
-        # Generate the prompt for the model using the current state
         prompt = prompt_template.invoke(state)
-        
-        model= chat_model()
+        model = chat_model()
         response = model.invoke(prompt)
         return {"messages": response}
 
@@ -114,15 +111,10 @@ async def chat(request: MessageRequest):
     memory = MemorySaver()
     compiled_app = workflow.compile(checkpointer=memory)
 
-    # Pass the user input as the initial message
     output = compiled_app.invoke({"messages": [user_input]}, {"configurable": {"thread_id": "abc345"}})
 
-    # Extract the 'content' from the response (from the last message)
     if "messages" in output and len(output["messages"]) > 0:
-        # Access the 'content' from the last message (AIMessage object)
         response_data = output["messages"][-1]
-        
-        # Directly access the content of the AIMessage object
         if hasattr(response_data, 'content'):
             bot_response = response_data.content
         else:
@@ -130,12 +122,8 @@ async def chat(request: MessageRequest):
     else:
         bot_response = "You can speak to a customer care on +234704440000222"
 
-
     return {"response": bot_response}
-
-
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app/routes:fastapi_app", host="0.0.0.0", port=8080, reload=True)
-
+    uvicorn.run("app.routes:fastapi_app", host="0.0.0.0", port=8080, reload=True)

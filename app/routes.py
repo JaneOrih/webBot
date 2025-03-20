@@ -21,17 +21,17 @@ If the question is not directly found in the FAQ, provide a summary of Frontlett
 Include a link to the support section if you do not have answers to the question (https://www.frontlett.com/support) if further details are needed."""
 
 # FastAPI app initialization
-app = FastAPI()
+fastapi_app = FastAPI()
 
 # Request model for user input
 class MessageRequest(BaseModel):
     message: str
 
-@app.get("/")
+@fastapi_app.get("/")
 def root():
-    return {"message": "Chatbot is working"}
+    pass
 
-@app.post("/chat")
+@fastapi_app.post("/chat")
 async def chat(request: MessageRequest):
     user_input = request.message.strip().lower()
 
@@ -136,4 +136,4 @@ async def chat(request: MessageRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app/routes:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("app/routes:fastapi_app", host="0.0.0.0", port=8080, reload=True)
